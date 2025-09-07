@@ -251,6 +251,11 @@ def build(page: ft.Page):
 if __name__ == "__main__":
     # Configuração para web (local e Render)
     port = int(os.environ.get("PORT", 8000))
+    # Renderer e estratégia de rota configuráveis por ENV
+    _renderer_name = (os.environ.get("WEB_RENDERER", "html") or "html").lower()
+    _web_renderer = ft.WebRenderer.CANVAS_KIT if _renderer_name in ("canvaskit", "canvas_kit", "skia") else ft.WebRenderer.HTML
+    _route_strategy = (os.environ.get("ROUTE_STRATEGY", "path") or "path").lower()
+    _route_url_strategy = "hash" if _route_strategy == "hash" else "path"
     
     # Detectar se está rodando no Render (tem variável PORT) ou localmente
     if os.environ.get("PORT"):
@@ -276,10 +281,10 @@ if __name__ == "__main__":
             view=ft.WEB_BROWSER,
             port=port,
             host=render_config.get('host', '0.0.0.0'),
-            web_renderer=ft.WebRenderer.HTML,
+            web_renderer=_web_renderer,
             assets_dir=render_config.get('assets_dir', 'assets'),
             # Configurações para mobile e compatibilidade
-            route_url_strategy="path",
+            route_url_strategy=_route_url_strategy,
             use_color_emoji=True,
             # Configurações adicionais para Render
             upload_dir=render_config.get('uploads_dir', 'uploads')
@@ -293,6 +298,6 @@ if __name__ == "__main__":
             port=port,
             host="localhost",
             # Configurações para mobile
-            route_url_strategy="path",
+            route_url_strategy=_route_url_strategy,
             use_color_emoji=True
         )
