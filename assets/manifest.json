@@ -1,0 +1,17 @@
+{
+    "name": "Sistema Escolar",
+    "short_name": "Escola",
+    "description": "Sistema de gestão escolar",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#F8FAFC",
+    "theme_color": "#3B82F6",
+    "orientation": "portrait-primary",
+    "icons": [
+        {
+            "src": "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTkyIiBoZWlnaHQ9IjE5MiIgdmlld0JveD0iMCAwIDE5MiAxOTIiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIxOTIiIGhlaWdodD0iMTkyIiByeD0iMjQiIGZpbGw9IiMzQjgyRjYiLz4KPHN2ZyB3aWR0aD0iOTYiIGhlaWdodD0iOTYiIHZpZXdCb3g9IjAgMCA5NiA5NiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4PSI0OCIgeT0iNDgiPgo8cGF0aCBkPSJNNDggMTZMMzIgMzJIMTY0TDQ4IDE2WiIgZmlsbD0id2hpdGUiLz4KPHBhdGggZD0iTTQ4IDgwTDM2IDY0SDE2MEw0OCA4MFoiIGZpbGw9IndoaXRlIi8+CjxwYXRoIGQ9Ik0yNCA0OEw0OCAyNEw3MiA0OEw0OCA3MkwyNCA0OFoiIGZpbGw9IndoaXRlIi8+Cjwvc3ZnPgo8L3ZnPgo=",
+            "sizes": "192x192",
+            "type": "image/svg+xml"
+        }
+    ]
+}

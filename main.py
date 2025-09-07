@@ -41,6 +41,15 @@ def main(page: ft.Page):
     page.window_height = 800
     page.scroll = "auto"
     page.bgcolor = "#F8FAFC"
+    
+    # Configurações para mobile
+    page.theme_mode = ft.ThemeMode.LIGHT
+    page.padding = 0
+    page.spacing = 0
+    
+    # Configurações responsivas
+    page.responsive = True
+    page.adaptive = True
 
     create_tables_and_seed()
 
@@ -231,7 +240,10 @@ if __name__ == "__main__":
             port=port,
             host="0.0.0.0",
             web_renderer=ft.WebRenderer.HTML,
-            assets_dir="assets"
+            assets_dir="assets",
+            # Configurações para mobile
+            route_url_strategy="path",
+            use_color_emoji=True
         )
     else:
         # Local - usar localhost
@@ -240,5 +252,8 @@ if __name__ == "__main__":
             target=main,
             view=ft.WEB_BROWSER,
             port=port,
-            host="localhost"
+            host="localhost",
+            # Configurações para mobile
+            route_url_strategy="path",
+            use_color_emoji=True
         )
