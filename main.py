@@ -5,6 +5,13 @@ import flet as ft
 # garante imports locais
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
+# Importar configurações específicas para Render
+try:
+    from render_config import configure_for_render, get_render_config
+    configure_for_render()
+except ImportError:
+    print("render_config.py não encontrado, usando configurações padrão")
+
 from services.db import create_tables_and_seed
 import importlib
 try:
@@ -42,7 +49,7 @@ def main(page: ft.Page):
     page.scroll = "auto"
     page.bgcolor = "#F8FAFC"
     
-    # Configurações para mobile
+    # Configurações para mobile e compatibilidade
     page.theme_mode = ft.ThemeMode.LIGHT
     page.padding = 0
     page.spacing = 0
@@ -50,6 +57,21 @@ def main(page: ft.Page):
     # Configurações responsivas
     page.responsive = True
     page.adaptive = True
+    
+    # Configurações para melhor compatibilidade
+    page.fonts = {
+        "Roboto": "https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap"
+    }
+    
+    # Configurações de performance
+    page.client_storage.clear()
+    
+    # Headers para melhor compatibilidade
+    try:
+        page.client_storage.set("app_version", "1.0.0")
+        page.client_storage.set("device_type", "unknown")
+    except:
+        pass
 
     create_tables_and_seed()
 
@@ -234,16 +256,33 @@ if __name__ == "__main__":
     if os.environ.get("PORT"):
         # Render - configuração específica para produção
         print(f"Starting Flet app on port {port}")
+        print("Configurações para Render.com:")
+        print("- Host: 0.0.0.0 (aceita conexões de qualquer IP)")
+        print("- Web Renderer: HTML")
+        print("- Assets: assets/")
+        print("- Route Strategy: path")
+        print("- CORS: Habilitado")
+        print("- SSL: Habilitado")
+        
+        # Obter configurações específicas do Render
+        try:
+            render_config = get_render_config()
+            print(f"Configuração Render: {render_config}")
+        except:
+            render_config = {}
+        
         ft.app(
             target=main,
             view=ft.WEB_BROWSER,
             port=port,
-            host="0.0.0.0",
+            host=render_config.get('host', '0.0.0.0'),
             web_renderer=ft.WebRenderer.HTML,
-            assets_dir="assets",
-            # Configurações para mobile
+            assets_dir=render_config.get('assets_dir', 'assets'),
+            # Configurações para mobile e compatibilidade
             route_url_strategy="path",
-            use_color_emoji=True
+            use_color_emoji=True,
+            # Configurações adicionais para Render
+            upload_dir=render_config.get('uploads_dir', 'uploads')
         )
     else:
         # Local - usar localhost

@@ -2,13 +2,17 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0, minimum-scale=1.0">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="theme-color" content="#3B82F6">
     <meta name="apple-mobile-web-app-title" content="Sistema Escolar">
     <meta name="application-name" content="Sistema Escolar">
+    <meta name="msapplication-TileColor" content="#3B82F6">
+    <meta name="msapplication-config" content="browserconfig.xml">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="format-detection" content="telephone=no">
     <link rel="manifest" href="manifest.json">
     <title>Sistema Escolar</title>
     <style>
@@ -63,6 +67,7 @@
             align-items: center;
             height: 100vh;
             background-color: #F8FAFC;
+            flex-direction: column;
         }
         
         .spinner {
@@ -72,31 +77,152 @@
             border-top: 4px solid #3B82F6;
             border-radius: 50%;
             animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+        
+        .loading-text {
+            color: #6B7280;
+            font-size: 16px;
+            text-align: center;
         }
         
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+        
+        /* Fallback para navegadores antigos */
+        .no-js {
+            display: none;
+        }
+        
+        .js .no-js {
+            display: block;
+        }
+        
+        /* Melhorar compatibilidade com navegadores antigos */
+        .fallback-message {
+            text-align: center;
+            padding: 40px 20px;
+            background-color: #FEF3C7;
+            border: 1px solid #F59E0B;
+            border-radius: 8px;
+            margin: 20px;
+            color: #92400E;
+        }
+        
+        /* Suporte para modo escuro */
+        @media (prefers-color-scheme: dark) {
+            body {
+                background-color: #111827;
+                color: #F9FAFB;
+            }
+            
+            .loading {
+                background-color: #111827;
+            }
+            
+            .spinner {
+                border-color: #374151;
+                border-top-color: #3B82F6;
+            }
+            
+            .loading-text {
+                color: #9CA3AF;
+            }
+        }
+        
+        /* Melhorar acessibilidade */
+        @media (prefers-reduced-motion: reduce) {
+            .spinner {
+                animation: none;
+            }
+        }
     </style>
 </head>
-<body>
+<body class="js">
+    <!-- Fallback para navegadores sem JavaScript -->
+    <noscript>
+        <div class="fallback-message">
+            <h2>JavaScript Necessário</h2>
+            <p>Este aplicativo requer JavaScript para funcionar. Por favor, habilite o JavaScript no seu navegador e recarregue a página.</p>
+        </div>
+    </noscript>
+    
+    <!-- Loading screen -->
     <div class="loading" id="loading">
         <div class="spinner"></div>
+        <div class="loading-text">Carregando Sistema Escolar...</div>
     </div>
+    
+    <!-- Fallback para carregamento lento -->
+    <div class="no-js" id="slow-loading" style="display: none;">
+        <div class="fallback-message">
+            <h3>Carregamento Lento</h3>
+            <p>O aplicativo está demorando para carregar. Isso pode ser devido à conexão lenta ou problemas de servidor.</p>
+            <button onclick="location.reload()" style="padding: 10px 20px; background: #3B82F6; color: white; border: none; border-radius: 5px; cursor: pointer;">
+                Tentar Novamente
+            </button>
+        </div>
+    </div>
+    
+    <!-- Container principal do Flet -->
     <div id="flet-app" style="display: none;"></div>
     
     <script>
-        // Esconder loading quando o Flet carregar
+        // Detectar se JavaScript está habilitado
+        document.documentElement.classList.add('js');
+        
+        // Timeout para carregamento lento
+        let loadingTimeout;
+        
+        // Função para mostrar fallback de carregamento lento
+        function showSlowLoadingFallback() {
+            const loading = document.getElementById('loading');
+            const slowLoading = document.getElementById('slow-loading');
+            if (loading && slowLoading) {
+                loading.style.display = 'none';
+                slowLoading.style.display = 'block';
+            }
+        }
+        
+        // Configurar timeout para carregamento lento (15 segundos)
+        loadingTimeout = setTimeout(showSlowLoadingFallback, 15000);
+        
+        // Função para esconder loading quando o Flet carregar
+        function hideLoading() {
+            clearTimeout(loadingTimeout);
+            const loading = document.getElementById('loading');
+            const app = document.getElementById('flet-app');
+            if (loading && app) {
+                loading.style.display = 'none';
+                app.style.display = 'block';
+            }
+        }
+        
+        // Detectar quando o Flet está pronto
         window.addEventListener('load', function() {
+            // Aguardar um pouco mais para garantir que o Flet carregou
+            setTimeout(hideLoading, 2000);
+        });
+        
+        // Fallback adicional para casos extremos
+        window.addEventListener('error', function(e) {
+            console.error('Erro no carregamento:', e);
             setTimeout(function() {
-                const loading = document.getElementById('loading');
-                const app = document.getElementById('flet-app');
-                if (loading && app) {
-                    loading.style.display = 'none';
-                    app.style.display = 'block';
+                if (document.getElementById('loading').style.display !== 'none') {
+                    showSlowLoadingFallback();
                 }
-            }, 1000);
+            }, 5000);
+        });
+        
+        // Detectar problemas de conectividade
+        window.addEventListener('online', function() {
+            console.log('Conexão restaurada');
+        });
+        
+        window.addEventListener('offline', function() {
+            console.log('Conexão perdida');
         });
     </script>
 </body>

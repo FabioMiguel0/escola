@@ -8,3 +8,19 @@ services:
     envVars:
       - key: PORT
         value: 10000
+      - key: RENDER
+        value: true
+      - key: FLET_WEB
+        value: true
+      - key: PYTHONUNBUFFERED
+        value: 1
+      - key: PYTHONDONTWRITEBYTECODE
+        value: 1
+      - key: SECURE_SSL_REDIRECT
+        value: true
+      - key: CORS_ALLOW_ALL_ORIGINS
+        value: true
+      - key: LOG_LEVEL
+        value: INFO
+    healthCheckPath: /
+    autoDeploy: true
