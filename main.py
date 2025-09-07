@@ -5,12 +5,7 @@ import flet as ft
 # garante imports locais
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-# Importar configurações específicas para Render
-try:
-    from render_config import configure_for_render, get_render_config
-    configure_for_render()
-except ImportError:
-    print("render_config.py não encontrado, usando configurações padrão")
+# Configuração simplificada para Render
 
 from services.db import create_tables_and_seed
 import importlib
@@ -249,61 +244,23 @@ def build(page: ft.Page):
     # inicía na rota guardada
     go(state["route"])
 if __name__ == "__main__":
-    # Configuração para web (local e Render)
+    # Configuração SIMPLES e DEFINITIVA para Render
     port = int(os.environ.get("PORT", 8000))
-    # Renderer e estratégia de rota configuráveis por ENV
-    _renderer_name = (os.environ.get("WEB_RENDERER", "canvaskit") or "canvaskit").lower()
-    _web_renderer = ft.WebRenderer.CANVAS_KIT if _renderer_name in ("canvaskit", "canvas_kit", "skia") else ft.WebRenderer.HTML
-    _route_strategy = (os.environ.get("ROUTE_STRATEGY", "path") or "path").lower()
-    _route_url_strategy = "hash" if _route_strategy == "hash" else "path"
     
-    print(f"Configurações de renderização:")
-    print(f"- Renderer: {_renderer_name} -> {_web_renderer}")
-    print(f"- Route Strategy: {_route_strategy} -> {_route_url_strategy}")
-    print(f"- Port: {port}")
+    print("=" * 50)
+    print("🚀 INICIANDO SISTEMA ESCOLAR")
+    print("=" * 50)
+    print(f"Porta: {port}")
+    print(f"Ambiente: {'RENDER' if os.environ.get('PORT') else 'LOCAL'}")
     
-    # Detectar se está rodando no Render (tem variável PORT) ou localmente
-    if os.environ.get("PORT"):
-        # Render - configuração específica para produção
-        print(f"Starting Flet app on port {port}")
-        print("Configurações para Render.com:")
-        print("- Host: 0.0.0.0 (aceita conexões de qualquer IP)")
-        print(f"- Web Renderer: {_renderer_name} ({_web_renderer})")
-        print("- Assets: assets/")
-        print(f"- Route Strategy: {_route_strategy} ({_route_url_strategy})")
-        print("- CORS: Habilitado")
-        print("- SSL: Habilitado")
-        print("- View: WEB_BROWSER (força modo web)")
-        
-        # Obter configurações específicas do Render
-        try:
-            render_config = get_render_config()
-            print(f"Configuração Render: {render_config}")
-        except:
-            render_config = {}
-        
-        ft.app(
-            target=main,
-            view=ft.WEB_BROWSER,
-            port=port,
-            host=render_config.get('host', '0.0.0.0'),
-            web_renderer=_web_renderer,
-            assets_dir=render_config.get('assets_dir', 'assets'),
-            # Configurações para mobile e compatibilidade
-            route_url_strategy=_route_url_strategy,
-            use_color_emoji=True,
-            # Configurações adicionais para Render
-            upload_dir=render_config.get('uploads_dir', 'uploads')
-        )
-    else:
-        # Local - usar localhost
-        print(f"Starting Flet app locally on port {port}")
-        ft.app(
-            target=main,
-            view=ft.WEB_BROWSER,
-            port=port,
-            host="localhost",
-            # Configurações para mobile
-            route_url_strategy=_route_url_strategy,
-            use_color_emoji=True
-        )
+    # Configuração DEFINITIVA para Render - SEMPRE web browser
+    ft.app(
+        target=main,
+        view=ft.WEB_BROWSER,  # OBRIGATÓRIO: força modo web
+        port=port,
+        host="0.0.0.0" if os.environ.get("PORT") else "localhost",
+        web_renderer=ft.WebRenderer.HTML,  # Mais compatível
+        assets_dir="assets",
+        route_url_strategy="path",
+        use_color_emoji=True
+    )
