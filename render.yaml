@@ -8,6 +8,10 @@ services:
     envVars:
       - key: PORT
         value: 10000
+      - key: WEB_RENDERER
+        value: canvaskit
+      - key: ROUTE_STRATEGY
+        value: path
       - key: RENDER
         value: true
       - key: FLET_WEB
