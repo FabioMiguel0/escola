@@ -202,6 +202,13 @@ def main(page: ft.Page):
     if os.environ.get("AUTO_LOGIN") == "1":
         go("home", user="admin", role="admin", user_id=1)
     else:
+        # Renderiza algo imediatamente para evitar tela em branco enquanto carrega
+        try:
+            page.views.clear()
+            page.views.append(ft.View("/", controls=[ft.Text("Carregando...")]))
+            page.update()
+        except Exception:
+            pass
         go("login")
 
 
@@ -245,22 +252,50 @@ def build(page: ft.Page):
     go(state["route"])
 if __name__ == "__main__":
     # Configuração SIMPLES e DEFINITIVA para Render
-    port = int(os.environ.get("PORT", 8000))
+    env_port = os.environ.get("PORT")
+    # Em produção (PORT definido), seguimos web. Localmente, abrimos como app desktop (sem browser)
+    port = int(env_port) if env_port else None
     
     print("=" * 50)
     print("🚀 INICIANDO SISTEMA ESCOLAR")
     print("=" * 50)
-    print(f"Porta: {port}")
-    print(f"Ambiente: {'RENDER' if os.environ.get('PORT') else 'LOCAL'}")
+    print(f"Porta: {port if port is not None else 'N/A (desktop)'}")
+    print(f"Ambiente: {'RENDER' if os.environ.get('PORT') else 'LOCAL-DESKTOP'}")
     
-    # Configuração DEFINITIVA para Render - SEMPRE web browser
-    ft.app(
-        target=main,
-        view=ft.WEB_BROWSER,  # OBRIGATÓRIO: força modo web
-        port=port,
-        host="0.0.0.0" if os.environ.get("PORT") else "localhost",
-        web_renderer=ft.WebRenderer.HTML,  # Mais compatível
-        assets_dir="assets",
-        route_url_strategy="path",
-        use_color_emoji=True
-    )
+    # Web em produção; desktop localmente
+    if os.environ.get("PORT"):
+        # Produção / Web
+        try:
+            ft.app(
+                target=main,
+                view=ft.WEB_BROWSER,
+                port=port,
+                host="0.0.0.0",
+                web_renderer=ft.WebRenderer.CANVAS_KIT,
+                assets_dir="assets",
+                route_url_strategy="path",
+                use_color_emoji=True
+            )
+        except OSError as ex:
+            if "10048" in str(ex) or "address already in use" in str(ex).lower():
+                print("Porta em uso. Tentando iniciar com uma porta aleatória livre...")
+                ft.app(
+                    target=main,
+                    view=ft.WEB_BROWSER,
+                    port=0,
+                    host="0.0.0.0",
+                    web_renderer=ft.WebRenderer.CANVAS_KIT,
+                    assets_dir="assets",
+                    route_url_strategy="path",
+                    use_color_emoji=True
+                )
+            else:
+                raise
+    else:
+        # Desktop (sem navegador)
+        ft.app(
+            target=main,
+            view=ft.FLET_APP,
+            assets_dir="assets",
+            use_color_emoji=True
+        )
