@@ -51,13 +51,23 @@ def create_tables_and_seed():
     cur.execute("""
     CREATE TABLE IF NOT EXISTS turmas (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        nome TEXT NOT NULL
+        nome TEXT NOT NULL,
+        ano_letivo INTEGER,
+        turno TEXT
     )
     """)
+    # Professores com dados profissionais
     cur.execute("""
     CREATE TABLE IF NOT EXISTS professores (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        nome TEXT NOT NULL
+        nome TEXT NOT NULL,
+        documento TEXT UNIQUE,
+        area_atuacao TEXT,
+        formacao TEXT,
+        titulos TEXT,
+        registro_mec TEXT,
+        disponibilidade TEXT,
+        contato TEXT
     )
     """)
 
@@ -73,7 +83,24 @@ def create_tables_and_seed():
     cur.execute("""
     CREATE TABLE IF NOT EXISTS disciplinas (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        nome TEXT NOT NULL
+        nome TEXT NOT NULL UNIQUE,
+        carga_horaria INTEGER
+    )
+    """)
+
+    # Horários (liga professor, disciplina, turma)
+    cur.execute("""
+    CREATE TABLE IF NOT EXISTS horarios (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        professor_id INTEGER NOT NULL,
+        disciplina_id INTEGER NOT NULL,
+        turma_id INTEGER NOT NULL,
+        dia_semana TEXT NOT NULL,
+        hora_inicio TEXT NOT NULL,
+        hora_fim TEXT NOT NULL,
+        FOREIGN KEY (professor_id) REFERENCES professores(id),
+        FOREIGN KEY (disciplina_id) REFERENCES disciplinas(id),
+        FOREIGN KEY (turma_id) REFERENCES turmas(id)
     )
     """)
     cur.execute("""

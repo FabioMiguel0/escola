@@ -68,6 +68,7 @@ def menu_for_role(role: str):
             ("disciplinas", "Disciplinas"),
             ("turmas", "Turmas"),
             ("alunos", "Alunos"),
+            ("horarios_admin", "Horários"),
             ("documentos", "Documentos"),
             ("comunicados", "Comunicados"),
             ("calendario", "Calendário"),

@@ -35,6 +35,7 @@ from view.student.profile_view import ProfileView  # <<< novo import
 from view.teacher.classes_view import ClassesView
 from view.teacher.schedule_view import ScheduleView
 from view.teacher.subjects_taught_view import SubjectsTaughtView
+from view.horarios_admin_view import HorariosAdmin
 
 
 def main(page: ft.Page):
@@ -151,6 +152,8 @@ def main(page: ft.Page):
                 return DocumentoView(page, user=state.get("user"), role=state.get("role"), user_id=state.get("user_id"))
             if r == "calendario":
                 return CalendarioView(page)
+            if r == "horarios_admin":
+                return HorariosAdmin(page)
             # fallback
             return ft.Container(content=ft.Text(f"Tela '{r}' em construção..."), expand=True)
         except Exception as ex:

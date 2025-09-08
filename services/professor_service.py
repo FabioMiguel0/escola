@@ -1,5 +1,4 @@
 from models.professor import Professor
-import sqlite3
 from services.db import get_conn
 
 def ensure_table():
@@ -8,17 +7,31 @@ def ensure_table():
     cur.execute("""
     CREATE TABLE IF NOT EXISTS professores (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        nome TEXT NOT NULL
+        nome TEXT NOT NULL,
+        documento TEXT UNIQUE,
+        area_atuacao TEXT,
+        formacao TEXT,
+        titulos TEXT,
+        registro_mec TEXT,
+        disponibilidade TEXT,
+        contato TEXT
     )
     """)
     conn.commit()
     conn.close()
 
-def create(nome):
+def create(nome: str, documento: str = None, area_atuacao: str = None, formacao: str = None,
+           titulos: str = None, registro_mec: str = None, disponibilidade: str = None, contato: str = None):
     ensure_table()
     conn = get_conn()
     cur = conn.cursor()
-    cur.execute("INSERT INTO professores (nome) VALUES (?)", (nome,))
+    cur.execute(
+        """
+        INSERT INTO professores (nome, documento, area_atuacao, formacao, titulos, registro_mec, disponibilidade, contato)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        """,
+        (nome, documento, area_atuacao, formacao, titulos, registro_mec, disponibilidade, contato)
+    )
     conn.commit()
     id_ = cur.lastrowid
     conn.close()
@@ -33,7 +46,7 @@ def list_professores():
     conn.close()
     return [dict(r) for r in rows]
 
-def delete(id_):
+def delete(id_: int):
     """Remove professor pelo id."""
     ensure_table()
     conn = get_conn()
@@ -50,6 +63,38 @@ def count_professores():
     r = cur.fetchone()
     conn.close()
     return r["c"] if r else 0
+
+def get_professor(id_: int):
+    ensure_table()
+    conn = get_conn()
+    cur = conn.cursor()
+    cur.execute("SELECT * FROM professores WHERE id = ?", (id_,))
+    r = cur.fetchone()
+    conn.close()
+    return dict(r) if r else None
+
+def update(id_: int, **kwargs):
+    """Atualiza campos do professor de forma parcial."""
+    if not kwargs:
+        return
+    ensure_table()
+    conn = get_conn()
+    cur = conn.cursor()
+    allowed = {"nome","documento","area_atuacao","formacao","titulos","registro_mec","disponibilidade","contato"}
+    fields = []
+    values = []
+    for k, v in kwargs.items():
+        if k in allowed:
+            fields.append(f"{k} = ?")
+            values.append(v)
+    if not fields:
+        conn.close()
+        return
+    values.append(id_)
+    sql = f"UPDATE professores SET {', '.join(fields)} WHERE id = ?"
+    cur.execute(sql, values)
+    conn.commit()
+    conn.close()
 
 class ProfessorService:
     def __init__(self):
