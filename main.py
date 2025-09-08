@@ -265,15 +265,24 @@ if __name__ == "__main__":
     # Web em produção; desktop localmente
     if os.environ.get("PORT"):
         # Produção / Web
+        # Produção: use por padrão HTML + hash (mais compatível em dispositivos/navegadores)
+        renderer_env = (os.environ.get("WEB_RENDERER") or "HTML").upper()
+        try:
+            selected_renderer = getattr(ft.WebRenderer, renderer_env)
+        except Exception:
+            selected_renderer = ft.WebRenderer.CANVAS_KIT
+        route_strategy = (os.environ.get("ROUTE_STRATEGY") or "hash").lower()
+        if route_strategy not in ("path", "hash"):
+            route_strategy = "path"
         try:
             ft.app(
                 target=main,
                 view=ft.WEB_BROWSER,
                 port=port,
                 host="0.0.0.0",
-                web_renderer=ft.WebRenderer.CANVAS_KIT,
+                web_renderer=selected_renderer,
                 assets_dir="assets",
-                route_url_strategy="path",
+                route_url_strategy=route_strategy,
                 use_color_emoji=True
             )
         except OSError as ex:
@@ -284,9 +293,9 @@ if __name__ == "__main__":
                     view=ft.WEB_BROWSER,
                     port=0,
                     host="0.0.0.0",
-                    web_renderer=ft.WebRenderer.CANVAS_KIT,
+                    web_renderer=selected_renderer,
                     assets_dir="assets",
-                    route_url_strategy="path",
+                    route_url_strategy=route_strategy,
                     use_color_emoji=True
                 )
             else:
