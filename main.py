@@ -257,11 +257,13 @@ if __name__ == "__main__":
     import os
     import flet as ft
 
-    # Se chamado como "internal Flet" (pelo server.py), executa ft.app aqui.
+    # Se estiver sendo iniciado pelo proxy/server (deploy), o servidor pode definir RUN_FLET_INTERNAL=1
+    # Nesse caso continuamos a servir via web (porta) para compatibilidade.
     if os.environ.get("RUN_FLET_INTERNAL") == "1":
         port = int(os.environ.get("FLET_PORT", os.environ.get("PORT", 10000)))
-        print(f"FLET (internal) starting on port {port}")
+        print(f"FLET (internal) starting on port={port} view=web_browser")
         ft.app(target=main, view=ft.WEB_BROWSER, port=port)
     else:
-        # quando executar localmente como script principal sem RUN_FLET_INTERNAL, nada ouft.app normal
-        print("main.py executed without RUN_FLET_INTERNAL=1 (no internal Flet started)")
+        # Execução local: abre em janela nativa sem expor porta
+        print("FLET (local) starting in native desktop mode (no port)")
+        ft.app(target=main)
