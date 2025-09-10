@@ -7,6 +7,8 @@ import websockets
 from fastapi import FastAPI, Request, Response, WebSocket
 import uvicorn
 import time
+import subprocess
+import sys
 
 FLET_PORT = 10001
 FLET_HOST = "127.0.0.1"
@@ -71,6 +73,18 @@ async def websocket_proxy(websocket: WebSocket, path: str):
     except Exception as e:
         print(f"[WS PROXY] error connecting to backend ws: {e}")
         await websocket.close()
+
+def start_flet_subprocess():
+    env = os.environ.copy()
+    env["RUN_FLET_INTERNAL"] = "1"
+    env["FLET_PORT"] = str(FLET_PORT)
+    print(f"[FLETlauncher] launching subprocess: {sys.executable} main.py (FLET_PORT={FLET_PORT})")
+    # -u for unbuffered output helps logs appear in Render
+    proc = subprocess.Popen([sys.executable, "-u", "main.py"], env=env)
+    return proc
+
+# start Flet as a separate process
+flet_proc = start_flet_subprocess()
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))

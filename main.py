@@ -257,7 +257,11 @@ if __name__ == "__main__":
     import os
     import flet as ft
 
-    port = int(os.environ.get("PORT", 10000))
-    view = ft.WEB_BROWSER
-    print(f"FLET STARTING - port={port} view={view}")
-    ft.app(target=main, view=view, port=port)
+    # Se chamado como "internal Flet" (pelo server.py), executa ft.app aqui.
+    if os.environ.get("RUN_FLET_INTERNAL") == "1":
+        port = int(os.environ.get("FLET_PORT", os.environ.get("PORT", 10000)))
+        print(f"FLET (internal) starting on port {port}")
+        ft.app(target=main, view=ft.WEB_BROWSER, port=port)
+    else:
+        # quando executar localmente como script principal sem RUN_FLET_INTERNAL, nada ouft.app normal
+        print("main.py executed without RUN_FLET_INTERNAL=1 (no internal Flet started)")
