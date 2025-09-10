@@ -6,87 +6,73 @@ import httpx
 import websockets
 from fastapi import FastAPI, Request, Response, WebSocket
 import uvicorn
+import time
 
-# porta onde o Flet vai rodar internamente
 FLET_PORT = 10001
-
-# importa a função main(page) do seu main.py (certifique-se que main.py define `def main(page: ft.Page): ...`)
+FLET_HOST = "127.0.0.1"
 main_module = importlib.import_module("main")
 
 def start_flet():
     import flet as ft
-    print(f"Starting internal Flet on port {FLET_PORT}")
-    # inicia Flet como servidor web na porta interna
-    ft.app(target=main_module.main, view=ft.WEB_BROWSER, port=FLET_PORT)
+    print(f"[FLET] starting internal Flet on {FLET_HOST}:{FLET_PORT}")
+    try:
+        ft.app(target=main_module.main, view=ft.WEB_BROWSER, port=FLET_PORT)
+    except Exception as e:
+        print(f"[FLET] exception: {e}")
 
-# start Flet em thread separada para não bloquear o FastAPI loop
 t = threading.Thread(target=start_flet, daemon=True)
 t.start()
 
+# wait a bit for Flet to start
+time.sleep(1)
+
 app = FastAPI()
 
-# proxy HTTP (GET/POST/PUT/...); encaminha requisições para o Flet interno
-@app.api_route("/{path:path}", methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "HEAD"])
+@app.get("/health")
+async def health():
+    return {"status": "ok"}
+
+@app.api_route("/{path:path}", methods=["GET","POST","PUT","DELETE","PATCH","OPTIONS","HEAD"])
 async def proxy(request: Request, path: str):
-    backend_url = f"http://127.0.0.1:{FLET_PORT}/{path}"
-    # preserva query params
+    backend_url = f"http://{FLET_HOST}:{FLET_PORT}/{path}"
     params = dict(request.query_params)
-    # filtra headers que não devem ser repassados
-    headers = {k: v for k, v in request.headers.items() if k.lower() not in ("host", "content-length", "accept-encoding", "connection")}
+    headers = {k: v for k, v in request.headers.items() if k.lower() not in ("host","accept-encoding","connection")}
     body = await request.body()
     async with httpx.AsyncClient() as client:
         try:
-            resp = await client.request(request.method, backend_url, params=params, headers=headers, content=body, timeout=30.0)
-        except httpx.RequestError as e:
-            return Response(content=f"Error proxying request: {e}", status_code=502)
-    # remove hop-by-hop headers antes de retornar
-    excluded = {"content-encoding", "transfer-encoding", "connection", "keep-alive"}
+            resp = await client.request(request.method, backend_url, params=params, headers=headers, content=body, timeout=15.0)
+        except Exception as e:
+            print(f"[PROXY] HTTP request error: {e}")
+            return Response(content="Bad Gateway", status_code=502)
+    excluded = {"content-encoding","transfer-encoding","connection","keep-alive"}
     response_headers = {k: v for k, v in resp.headers.items() if k.lower() not in excluded}
     return Response(content=resp.content, status_code=resp.status_code, headers=response_headers, media_type=resp.headers.get("content-type"))
 
-# proxy WebSocket — encaminha mensagens entre cliente e Flet interno
 @app.websocket("/{path:path}")
 async def websocket_proxy(websocket: WebSocket, path: str):
     await websocket.accept()
-    qs = websocket.query_params
-    query = ""
-    if qs:
-        query = "?" + "&".join([f"{k}={v}" for k, v in qs.multi_items()])
-    backend_ws_url = f"ws://127.0.0.1:{FLET_PORT}/{path}{query}"
-
-    async def forward_client_to_backend(ws_client, ws_backend):
-        try:
-            while True:
-                msg = await ws_client.receive_text()
-                await ws_backend.send(msg)
-        except Exception:
-            try:
-                await ws_backend.close()
-            except Exception:
-                pass
-
-    async def forward_backend_to_client(ws_client, ws_backend):
-        try:
-            async for message in ws_backend:
-                await ws_client.send_text(message)
-        except Exception:
-            try:
-                await ws_client.close()
-            except Exception:
-                pass
-
+    backend_ws = f"ws://{FLET_HOST}:{FLET_PORT}/{path}"
     try:
-        async with websockets.connect(backend_ws_url) as ws_backend:
-            task1 = asyncio.create_task(forward_client_to_backend(websocket, ws_backend))
-            task2 = asyncio.create_task(forward_backend_to_client(websocket, ws_backend))
-            await asyncio.wait([task1, task2], return_when=asyncio.FIRST_COMPLETED)
+        async with websockets.connect(backend_ws) as ws_backend:
+            async def client_to_backend():
+                try:
+                    while True:
+                        msg = await websocket.receive_text()
+                        await ws_backend.send(msg)
+                except Exception:
+                    pass
+            async def backend_to_client():
+                try:
+                    async for message in ws_backend:
+                        await websocket.send_text(message)
+                except Exception:
+                    pass
+            await asyncio.wait([asyncio.create_task(client_to_backend()), asyncio.create_task(backend_to_client())], return_when=asyncio.FIRST_COMPLETED)
     except Exception as e:
-        # backend WS não disponível
+        print(f"[WS PROXY] error connecting to backend ws: {e}")
         await websocket.close()
-        return
 
 if __name__ == "__main__":
-    # porta que o Render decide; fallback 10000
     port = int(os.environ.get("PORT", 10000))
-    print(f"Starting proxy server on 0.0.0.0:{port} (forwarding to internal Flet:{FLET_PORT})")
-    uvicorn.run(app, host="0.0.0.0", port=port)
+    print(f"[PROXY] starting on 0.0.0.0:{port} -> internal Flet {FLET_HOST}:{FLET_PORT}")
+    uvicorn.run(app, host="0.0.0.0", port=port, log_level="info")
