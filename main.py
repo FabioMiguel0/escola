@@ -257,9 +257,10 @@ if __name__ == "__main__":
     import os
     import flet as ft
 
-    port = int(os.environ.get("PORT", 8000))
-    address = "0.0.0.0"
-    view = ft.WEB_BROWSER  # roda como app web (não desktop)
+    # Render fornece PORT; usa 10000 como fallback se quiser
+    port = int(os.environ.get("PORT", 10000))
+    view = ft.WEB_BROWSER  # força modo web
 
-    print(f"Starting Flet on {address}:{port} view={view}")
-    ft.app(target=main, view=view, port=port, address=address)
+    print(f"Starting Flet on port {port} view={view}")
+    # NÃO usar 'address' — causa TypeError no runtime do Flet
+    ft.app(target=main, view=view, port=port)
