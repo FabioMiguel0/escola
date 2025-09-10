@@ -254,60 +254,12 @@ def build(page: ft.Page):
     # inicía na rota guardada
     go(state["route"])
 if __name__ == "__main__":
-    # Configuração SIMPLES e DEFINITIVA para Render
-    env_port = os.environ.get("PORT")
-    # Em produção (PORT definido), seguimos web. Localmente, abrimos como app desktop (sem browser)
-    port = int(env_port) if env_port else None
-    
-    print("=" * 50)
-    print("🚀 INICIANDO SISTEMA ESCOLAR")
-    print("=" * 50)
-    print(f"Porta: {port if port is not None else 'N/A (desktop)'}")
-    print(f"Ambiente: {'RENDER' if os.environ.get('PORT') else 'LOCAL-DESKTOP'}")
-    
-    # Web em produção; desktop localmente
-    if os.environ.get("PORT"):
-        # Produção / Web
-        # Produção: use por padrão HTML + hash (mais compatível em dispositivos/navegadores)
-        renderer_env = (os.environ.get("WEB_RENDERER") or "HTML").upper()
-        try:
-            selected_renderer = getattr(ft.WebRenderer, renderer_env)
-        except Exception:
-            selected_renderer = ft.WebRenderer.CANVAS_KIT
-        route_strategy = (os.environ.get("ROUTE_STRATEGY") or "hash").lower()
-        if route_strategy not in ("path", "hash"):
-            route_strategy = "path"
-        try:
-            ft.app(
-                target=main,
-                view=ft.WEB_BROWSER,
-                port=port,
-                host="0.0.0.0",
-                web_renderer=selected_renderer,
-                assets_dir="assets",
-                route_url_strategy=route_strategy,
-                use_color_emoji=True
-            )
-        except OSError as ex:
-            if "10048" in str(ex) or "address already in use" in str(ex).lower():
-                print("Porta em uso. Tentando iniciar com uma porta aleatória livre...")
-                ft.app(
-                    target=main,
-                    view=ft.WEB_BROWSER,
-                    port=0,
-                    host="0.0.0.0",
-                    web_renderer=selected_renderer,
-                    assets_dir="assets",
-                    route_url_strategy=route_strategy,
-                    use_color_emoji=True
-                )
-            else:
-                raise
-    else:
-        # Desktop (sem navegador)
-        ft.app(
-            target=main,
-            view=ft.FLET_APP,
-            assets_dir="assets",
-            use_color_emoji=True
-        )
+    import os
+    import flet as ft
+
+    port = int(os.environ.get("PORT", 8000))
+    address = "0.0.0.0"
+    view = ft.WEB_BROWSER  # roda como app web (não desktop)
+
+    print(f"Starting Flet on {address}:{port} view={view}")
+    ft.app(target=main, view=view, port=port, address=address)
