@@ -252,14 +252,3 @@ def build(page: ft.Page):
         go("dashboard")
 
     # inicía na rota guardada
-    go(state["route"])
-if __name__ == "__main__":
-    import os
-    import flet as ft
-
-    # Para deploy no Render:
-    # - usa a porta fornecida em $PORT
-    # - força view=WEB_BROWSER para servir como app web em vez de abrir janela nativa
-    port = int(os.environ.get("PORT", os.environ.get("FLET_PORT", 10000)))
-    print(f"FLET starting on port={port} view=web_browser")
-    ft.app(target=main, view=ft.WEB_BROWSER, port=port)
