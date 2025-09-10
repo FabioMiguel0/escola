@@ -257,13 +257,9 @@ if __name__ == "__main__":
     import os
     import flet as ft
 
-    # Se estiver sendo iniciado pelo proxy/server (deploy), o servidor pode definir RUN_FLET_INTERNAL=1
-    # Nesse caso continuamos a servir via web (porta) para compatibilidade.
-    if os.environ.get("RUN_FLET_INTERNAL") == "1":
-        port = int(os.environ.get("FLET_PORT", os.environ.get("PORT", 10000)))
-        print(f"FLET (internal) starting on port={port} view=web_browser")
-        ft.app(target=main, view=ft.WEB_BROWSER, port=port)
-    else:
-        # Execução local: abre em janela nativa sem expor porta
-        print("FLET (local) starting in native desktop mode (no port)")
-        ft.app(target=main)
+    # Para deploy no Render:
+    # - usa a porta fornecida em $PORT
+    # - força view=WEB_BROWSER para servir como app web em vez de abrir janela nativa
+    port = int(os.environ.get("PORT", os.environ.get("FLET_PORT", 10000)))
+    print(f"FLET starting on port={port} view=web_browser")
+    ft.app(target=main, view=ft.WEB_BROWSER, port=port)
