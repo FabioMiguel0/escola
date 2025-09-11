@@ -186,7 +186,6 @@ def main(page: ft.Page):
 
 
 if __name__ == "__main__":
-    # no Render: usar PORT env e view web
     port_env = os.environ.get("PORT")
     if port_env:
         try:
@@ -194,9 +193,8 @@ if __name__ == "__main__":
         except Exception:
             port = 8000
         print(f"[START] running web on port={port}")
-        ft.app(target=main, view=ft.WEB_BROWSER, port=port, address="0.0.0.0")
+        ft.app(target=main, view=ft.WEB_BROWSER, port=port)
     else:
-        # execução local: prefere janela nativa
         print("[START] running locally (native window preferred)")
         try:
             ft.app(target=main)
