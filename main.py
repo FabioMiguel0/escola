@@ -7,13 +7,15 @@ import flet as ft
 # garante imports locais
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-# serviços e seed opcional
+# serviços opcionais
 from services.db import create_tables_and_seed
+
 try:
     seed = importlib.import_module("services.seed")
 except ModuleNotFoundError:
     seed = None
 
+# views / componentes
 from UI import LoginView
 from UI.shell import Shell
 from services.user_service import menu_for_role
@@ -26,8 +28,6 @@ from view.disciplina_view import DisciplinaView
 from view.frequencia_view import FrequenciaView
 from view.nota_view import NotaView
 from view.documento_view import DocumentoView
-from view.calendario_view import CalendarioView
-from view.horarios_admin_view import HorariosAdmin
 
 
 def main(page: ft.Page):
@@ -36,8 +36,6 @@ def main(page: ft.Page):
     page.window_height = 800
     page.scroll = "auto"
     page.bgcolor = "#F8FAFC"
-
-    # Configurações básicas
     try:
         page.theme_mode = ft.ThemeMode.LIGHT
     except Exception:
@@ -46,17 +44,13 @@ def main(page: ft.Page):
     page.spacing = 0
     page.responsive = True
     page.adaptive = True
-    page.fonts = {
-        "Roboto": "https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap"
-    }
 
-    # limpa client storage se possível
     try:
         page.client_storage.clear()
     except Exception:
         pass
 
-    # cria BD / seed (se disponível)
+    # banco e seed
     try:
         create_tables_and_seed()
         if seed and hasattr(seed, "seed_all"):
@@ -67,30 +61,16 @@ def main(page: ft.Page):
     except Exception as ex:
         print("[DB] create_tables_and_seed error:", ex)
 
-    # estado da aplicação
+    # estado global
     state = {"user": None, "user_id": None, "role": None, "route": "login"}
 
-    permissions = {
-        "admin": {"dashboard", "usuarios", "professores", "disciplinas", "turmas", "alunos", "documentos", "comunicados", "calendario", "frequencia", "notas"},
-        "secretaria": {"dashboard", "alunos", "turmas", "documentos", "comunicados", "calendario", "disciplinas"},
-        "professor": {"dashboard", "frequencia", "notas", "comunicados", "minhas_turmas", "horario", "minhas_disciplinas", "documentos"},
-        "aluno": {"perfil", "desempenho", "boletim", "horario"},
-        "responsavel": {"dashboard", "comunicados", "calendario"},
-        "suporte": {"dashboard"},
-    }
-
-    shell = None
-
+    # monta conteúdo da rota
     def build_content():
         r = state.get("route", "dashboard")
         role = state.get("role")
         try:
             if r == "login":
                 return LoginView(page, go=go)
-            if r == "home":
-                r = "dashboard"
-                state["route"] = r
-                role = state.get("role")
             if r == "dashboard":
                 return DashboardView(page, role=role, username=state.get("user"), go=go)
             if r == "alunos":
@@ -101,19 +81,19 @@ def main(page: ft.Page):
                 return ProfessorView(page, role=role, current_user_id=state.get("user_id"))
             if r == "disciplinas":
                 return DisciplinaView(page)
-            if r == "notas":
-                return NotaView(page, role=role, aluno_id=state.get("user_id"))
             if r == "frequencia":
                 return FrequenciaView(page)
+            if r == "notas":
+                return NotaView(page, role=role, aluno_id=state.get("user_id"))
             if r == "documentos":
-                return DocumentoView(page, user=state.get("user"), role=state.get("role"), user_id=state.get("user_id"))
+                return DocumentoView(page, user=state.get("user"),
+                                     role=state.get("role"), user_id=state.get("user_id"))
             if r == "comunicados":
                 return ComunicadoView(page)
-            if r == "calendario":
-                return CalendarioView(page)
-            if r == "horarios_admin":
-                return HorariosAdmin(page)
-            return ft.Container(content=ft.Text(f"Tela '{r}' em construção..."), expand=True)
+            return ft.Container(
+                content=ft.Text(f"Tela '{r}' em construção..."),
+                expand=True
+            )
         except Exception as ex:
             tb = traceback.format_exc()
             print("[BUILD_CONTENT] exception:", tb)
@@ -130,6 +110,8 @@ def main(page: ft.Page):
                 padding=12,
             )
 
+    shell = None
+
     def build_shell():
         nonlocal shell
         shell = Shell(
@@ -142,6 +124,7 @@ def main(page: ft.Page):
         )
         return shell.build()
 
+    # troca de rota
     def go(view: str, user=None, role=None, user_id=None):
         if user is not None:
             state["user"] = user
@@ -150,12 +133,9 @@ def main(page: ft.Page):
         if user_id is not None:
             state["user_id"] = user_id
         if view == "logout":
-            state["user"] = None
-            state["role"] = None
-            state["user_id"] = None
+            state.update({"user": None, "role": None, "user_id": None})
             view = "login"
         state["route"] = view
-
         try:
             page.views.clear()
             page.views.append(build_shell())
@@ -167,7 +147,7 @@ def main(page: ft.Page):
             page.views.append(ft.View("/", controls=[ft.Text(f"Erro ao construir UI: {ex}")]))
             page.update()
 
-    # inicialização: evita tela em branco
+    # inicial
     try:
         page.views.clear()
         page.views.append(ft.View("/", controls=[ft.Text("Carregando...")]))
@@ -175,7 +155,6 @@ def main(page: ft.Page):
     except Exception:
         pass
 
-    # auto-login para desenvolvimento
     if os.environ.get("AUTO_LOGIN") == "1":
         state.update({"user": "admin", "role": "admin", "user_id": 1, "route": "dashboard"})
         page.views.clear()
@@ -186,12 +165,10 @@ def main(page: ft.Page):
 
 
 if __name__ == "__main__":
-    port_env = os.environ.get("PORT")
-    if port_env:
-        try:
-            port = int(port_env)
-        except Exception:
-            port = 8000
+    import os
+    # quando deploy no Render, usar a porta do env PORT e forçar WEB_BROWSER
+    port = int(os.environ.get("PORT", 0) or 0)
+    if port:
         print(f"[START] running web on port={port}")
         ft.app(target=main, view=ft.WEB_BROWSER, port=port)
     else:
